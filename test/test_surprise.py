@@ -57,7 +57,7 @@ class TestSurprise(object):
             if self.surprise.rpy2:
                 assert allclose(p[i], res[4])
             else:
-                assert allclose(None, res[4])
+                assert res[4] is None
         
     def teardown(self):
         #tidy up
