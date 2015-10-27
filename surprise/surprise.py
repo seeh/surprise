@@ -13,7 +13,7 @@ from numpy.linalg.linalg import eig, det
 
 MomentsSpec = nt('moments', ['mean', 'cov', 'icov'])
 
-class surprise(object):
+class Surprise(object):
     """
     Module for estimating relative entropy and surprise from samples or
     moments of the distributions assuming they are Gaussian.
@@ -45,7 +45,8 @@ class surprise(object):
 
     def __call__(self, dist1, dist2, mode = 'add', dist3 = None,
                  weights1 = None, weights2 = None, weights3 = None,
-                 bits = True, getChi2 = False, cqf_method = 'davies'):
+                 bits = True, getChi2 = False, cqf_method = 'davies',
+                 verbose = False):
         """
         Routine for calculating relative entropy and surprise from samples
         or moments. It calculates D(dist2||dist1).
@@ -72,6 +73,8 @@ class surprise(object):
         :param cqf_method: Method used to estimate the p-value of the
         surprise in CompQuadForm. One out of 'davies', 'farebrother',
         'imhof', 'liu', 'ruben'; default: davies
+        :param verbose: print output from CompQuadForm to screen;
+        default: False
         
         :returns D, ere, S, sD, p, lambdas, dmu: Relative entropy, expected
         relative entropy, surprise, sigma(D), p-value of the surprise; if 
@@ -98,9 +101,10 @@ class surprise(object):
         # Try to estimate p-value
         if self.rpy2:
             res = self.getPValue(lambdas, dmu, cqf_method)
-            print('CompQuadForm results:')
-            print(res)
             p = res[2][0]
+            if verbose:
+                print('CompQuadForm results:')
+                print(res)
         else:
             p = None
 
@@ -165,12 +169,9 @@ class surprise(object):
         Dpart, deltamu = self.getRelEnt(m1, m2, d)
         ASigma = matrix(identity(d) - m1.icov * m2.cov)
         lambdas = eig(ASigma)[0]
-#         ere = (Dpart + trace(ASigma)) * .5
         ere = -.5 * log(det(m2.cov) / det(m1.cov))
         D = .5 * (Dpart + deltamu)
         S = D - ere
-#         temp = m1.icov * m2.cov - matrix(identity(d))
-#         sigmaD = trace(temp * temp)
         sigmaD = trace(ASigma * ASigma)
         sigmaD = sqrt(.5 * sigmaD)
         return D, ere, S, sigmaD, lambdas, deltamu
@@ -191,10 +192,8 @@ class surprise(object):
         ASigma = matrix(m1.icov * m2.cov + identity(d))
         lambdas = eig(ASigma)[0]
         ere = .5 * (Dpart + trace(ASigma))
-#         ere = -.5 * log(det(m2.cov) / det(m1.cov)) + trace(m2.cov * m1.icov)
         D = .5 * (Dpart + deltamu)
         S = D - ere
-#         sigmaD = trace((m1.icov * m2.cov + matrix(identity(d)))**2)
         sigmaD = trace(ASigma * ASigma)
         sigmaD = sqrt(.5 * sigmaD)
         return D, ere, S, sigmaD, lambdas, deltamu
@@ -217,40 +216,23 @@ class surprise(object):
         and dmu of generalized chi-squared
 
         """
-        #TODO: FIX THIS!
         if m3 is None:
             mes='Samples or moments of joint prior has to be specified'
             raise Warning(mes)
 
         Dpart, deltamu = self.getRelEnt(m1, m2, d)
-#         ASigma = m1.icov * m2.cov + matrix(identity(d))
-#         ASigma -= m1.icov * m2.cov * m3.icov * m1.cov
-#         ASigma -= m3.icov * m2.cov * m1.icov*self.m2[1]
-#         ASigma -= m3.icov * m2.cov
-#         ASigma += m3.icov * m2.cov * m1.icov * m2.cov * m3.icov * m1.cov
-#         tdiff = (m3.mean - m1.mean) * m3.icov * m2.cov
-
 
         Q = m2.icov - m3.icov
         T = (m3.mean - m1.mean) * m3.icov
         W = m2.cov * m1.icov * m2.cov
         ASigma = (Q * W) * (identity(d) + Q * m1.cov)
         lambdas = eig(ASigma)[0]
-#         ere = -log(det(m2.cov) / det(m1.cov))
-#         ere += 2. * trace(m2.cov * Q1)
-#         ere += (T * W * T.T).A1[0]
-#         ere -= trace(W * m3.icov * m1.cov * Q1)
-#         ere = ere/2.
         twt = (T * W * T.T).A1[0]
+
         ere = .5 * (Dpart + trace(ASigma) + twt)
         D = .5 * (Dpart + deltamu)
         S = D - ere
 
-#         Q=self.m2[2]-self.m3[2]
-#         
-#         sigmaD=(P*W*(Q+Q*self.m1[1]*Q)*W*P.T).A1[0]
-#         sigmaD+=.5*trace((Q*W+Q*W*Q*self.m1[1])**2)
-#         sigmaD=sqrt(sigmaD)
         temp = W * (Q + Q * m1.cov * Q) * W
         sigmaD = trace(ASigma * ASigma) + 2 * (T * temp * T.T).A1[0]
         sigmaD = sqrt(.5 * sigmaD)
@@ -336,8 +318,8 @@ class surprise(object):
         :param weights: #samples array with weights for sample
         :returns mu: weighted mean
         """
-        mu = (weights.reshape(-1,1) * sample).mean(axis = 0)
-        return mu / weights.mean()
+        mu = (weights.reshape(-1,1) * sample).sum(axis = 0)
+        return mu
     
     def weightedCorr(self,dist,weights,mu):
         """
@@ -359,7 +341,7 @@ class surprise(object):
                 temp = sum(d[:, i] * d[:, j] * weights)
                 c[i,j] = temp / s[i] / s[j]
                 c[j,i] = c[i,j]
-        n=(1. - sum(weights * weights))
+        n = (1. - sum(weights * weights))
         return c, s/sqrt(n)
     
     def secInv(self, Mat):

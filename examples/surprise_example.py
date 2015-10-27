@@ -3,11 +3,11 @@
 Uses surprise on a toy example.
 """
 
-from surprise import surprise
+from surprise import Surprise
 from numpy.random.mtrand import randn, randint
 from matplotlib.mlab import entropy
 
-sc = surprise()
+sc = Surprise()
 
 # Create two samples from a standard normal distribution
 # Reshape into (# of samples, # of dimensions) array

@@ -7,7 +7,7 @@ Tests for `surprise` module.
 from __future__ import print_function, division, absolute_import, unicode_literals
 
 import pytest
-from surprise import surprise
+from surprise import Surprise
 from numpy import atleast_2d, allclose, matrix, arange, ones, cov, log, sqrt
 
 
@@ -18,7 +18,7 @@ class TestSurprise(object):
         print("setting up " + __name__)
         self.td=atleast_2d(arange(0,10,1)).T
         self.tw=ones(10)
-        self.surprise=surprise()
+        self.surprise=Surprise()
         self.tdt1=([0.],[[1.]])
         self.tdt2=([1.],[[0.5]])
         self.tdt3=([1.],[[2.]])
