@@ -8,6 +8,9 @@ Surprise Calculator
 .. image:: https://coveralls.io/repos/seeh/surprise/badge.svg
   		:target: https://coveralls.io/r/seeh/surprise
 
+.. image:: http://img.shields.io/badge/arXiv-1402.3593-orange.svg?style=flat
+        :target: http://arxiv.org/abs/1402.3593
+
 This package estimates relative entropy and Surprise between two samples,
 assuming they are Gaussian. See http://arxiv.org/abs/1402.3593 for more details.
 
